@@ -1,0 +1,100 @@
+#
+# "make" compiles the library.
+# "sudo make install" installs the library.
+# "make profiling" makes the static library with profiling and debugging enabled.
+
+CC = gcc
+CPLUSPLUS = g++
+SHARED_CFLAGS = -std=gnu99 -Wall -O2 -fvisibility=hidden -I. -DFGEN_DLL -DFGEN_DLL_EXPORTS
+SHARED_CPLUSPLUSFLAGS = -Wall -O2 -fvisibility=hidden -I. -DFGEN_DLL -DFGEN_DLL_EXPORTS
+PROFILING_CFLAGS = -std=gnu99 -Wall -O -pg -I.
+PROFILING_CPLUSPLUSFLAGS = -Wall -O -pg -I.
+SHARED_LIB_DIR = /mingw/bin
+INCLUDE_DIR = /mingw/include
+VERSION = 0.1.13
+VERSION_MAJOR = 0
+
+MODULES = bitstring.o parameters.o population.o \
+	  random.o selection.o crossover.o mutation.o error.o \
+	  gray.o ga.o decode.o seed.o ffit.o cache.o migration.o pso.o steady_state.o
+FGENPP_MODULES = fgenpp.o
+MODULES_PG = bitstring.p parameters.p population.p \
+	  random.p selection.p crossover.p mutation.p error.p \
+	  gray.p ga.p decode.p seed.p ffit.p cache.p migration.p pso.p steady_state.p
+FGENPP_MODULES_PG = fgenpp.p
+
+all : libfgen.dll libfgenpp.dll
+
+libfgen.dll : $(MODULES)
+	$(CC) -shared -o libfgen.dll $(MODULES) -lm -lpthread
+
+libfgenpp.dll : $(FGENPP_MODULES)
+	$(CPLUSPLUS) -shared -o libfgenpp.dll $(FGENPP_MODULES) -lfgen
+
+install : $(SHARED_LIB_DIR)/libfgen.dll $(SHARED_LIB_DIR)/libfgenpp.dll $(INCLUDE_DIR)/fgen.h $(INCLUDE_DIR)/fgenpp.h
+
+uninstall :
+	rm -f $(SHARED_LIB_DIR)/libfgen.dll
+	rm -f $(SHARED_LIB_DIR)/libfgenpp.dll
+	rm -f $(INCLUDE_DIR)/fgen.h
+	rm -f $(INCLUDE_DIR)/fgenpp.h
+
+$(SHARED_LIB_DIR)/libfgen.dll : libfgen.dll
+	install -m 0644 libfgen.dll $(SHARED_LIB_DIR)/libfgen.dll
+
+$(SHARED_LIB_DIR)/libfgenpp.dll : libfgenpp.dll
+	install -m 0644 libfgenpp.dll $(SHARED_LIB_DIR)/libfgenpp.dll
+
+$(INCLUDE_DIR)/fgen.h : fgen.h
+	install -m 0644 fgen.h $(INCLUDE_DIR)/fgen.h
+
+$(INCLUDE_DIR)/fgenpp.h : fgenpp.h
+	install -m 0644 fgenpp.h $(INCLUDE_DIR)/fgenpp.h
+
+.c.o :
+	$(CC) -c $(SHARED_CFLAGS) $< -o $@
+
+.cpp.o :
+	$(CPLUSPLUS) -c $(SHARED_CPLUSPLUSFLAGS) $< -o $@
+
+profiling : libfgen_pg.a libfgenpp_pg.a
+
+libfgen_pg.a : $(MODULES_PG)
+	ar r libfgen_pg.a $(MODULES_PG)
+
+libfgenpp_pg.a : $(FGENPP_MODULES_PG)
+	ar r libfgenpp_pg.a $(FGENPP_MODULES_PG)
+
+.c.p :
+	$(CC) -c $(PROFILING_CFLAGS) $< -o $@
+
+.cpp.p :
+	$(CPLUSPLUS) -c $(PROFILING_CPLUSPLUSFLAGS) $< -o $@
+
+clean :
+	rm -f $(MODULES)
+	rm -f $(FGENPP_MODULES)
+	rm -f libfgen.dll
+	rm -f libfgenpp.dll
+	rm -f $(MODULES_PG)
+	rm -f $(FGENPP_MODULES_PG)
+	rm -f libfgen_pg.a
+	rm -f libfgenpp_pg.a
+
+dep:
+	rm -f .depend
+	make .depend
+
+.depend:
+	echo '# Module dependencies' >>.depend
+	$(CC) -MM $(patsubst %.o,%.c,$(MODULES)) >>.depend
+	$(CC) -MM $(patsubst %.o,%.cpp,$(FGENPP_MODULES)) >>.depend
+	for x in $(patsubst %.p,%.c,$(MODULES_PG)); do \
+	$(CC) -MM -MT `echo $$x | sed s/\\\.c/\.p/` $$x >>.depend; \
+	done; \
+	for x in $(patsubst %.p,%.cpp,$(FGENPP_MODULES_PG)); do \
+	$(CC) -MM -MT `echo $$x | sed s/\\\.cpp/\.p/` $$x >>.depend; \
+	done
+
+include .depend
+

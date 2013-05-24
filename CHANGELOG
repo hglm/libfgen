@@ -1,0 +1,226 @@
+Version 0.1.16
+
+14May13 - Fix random number generation on ARM7 (Cortex) platform processors (problem was related to range of char
+          type).
+
+Version 0.1.15
+
+21Mar13 - Field in FgenRNG structure wasn't properly initialized.
+	- Another slight optimization for random number generator.
+
+Version 0.1.14
+
+18Mar13 - Fix major bug in elitist SUS selection that caused one individual to be sometimes propagated throughout the
+	  population. Bug was introduced in version 0.1.9.
+	- Optimize fgen_random_n(), especially for powers of two. Two fields added to the FgenRNG struct in a
+	  compatible way.
+
+Version 0.1.13
+
+13Mar13 - Support MinGW under Windows with Makefile.MinGW. The GTK example programs build when GTK 3+
+	  is installed with a valid pkg-config configuration.
+	- Fix prototype of GetBitstring() and GetFitness() inline functions in C++ wrapper.
+	- Fix constant overflow warning in Windows.
+	- Add Visual C++ project file for tsp_gtk.
+
+Version 0.1.12
+
+11Mar13	- Rename source directory to libfgen/.
+	- Support Windows. There is a seperate distribution file for the Windows version.
+	- Added win32_compat.h, and some minor changes to accomodate a Windows C++ compiler
+	  compiling the code.
+	- Example program binaries are appended with "_bin". gp, tsp (renamed tsp_gtk) and pict
+	  moved to examples/ directory.
+
+03Mar13 - Change internal UINT64 macros to uint64_t defined in <stdint.h>, remove uint64.h.
+
+Version 0.1.11
+
+28Feb13 - Reorganize example program into examples/ directory.
+	- Reorganize makefile to be able to automatically build profiling/debugging library.
+	- In fgen_destroy, only free the population if it has been created previously in fgen_run. Previously, calling
+	  fgen_destroy without calling fgen_run before would cause an error.
+
+Version 0.1.10
+
+27Feb13	- Reset the stop signal in fgen_run instead of fgen_create/initialize, fixing a bug. This allows the same
+	  population to be used multiple times without recreating it.
+	- In a threaded archipelago, avoid deadlock when stop is signalled in generation 0.
+	- Allow a threaded archipelago to speed up and skip generations when an individual with infinite fitness is
+	  encountered, even in the middle of the generation callback interval.
+	- Add fgen_invalidate_cache.
+	- Invalidate the cache when fgen_invalidate_population_fitness is called.
+	- Add a refcount to the cache structure, don't use the cache_is_shared field anymore.
+	- Fix Makefile with proper use of soname linker option.
+
+26Feb13	- Create stand-alone texture compression command line utilty texgenpack, split off from the fgen source tree.
+	- Extinction was not thread safe, not even safe for sequential runs of the same population structure.
+	  Reformulated extinction to happen every 200 generations.
+	- Fix FGEN_INITIALIZATION_CONTINUE mode.
+
+25Feb13 - In fgen_run and fgen_run_archipelago, make sure fitness is up-to-date when the function exits. This was already
+          the case for fgen_run_threaded and fgen_run_archipelago_threaded.
+	- Fix ETC2 compression.
+
+24Feb13	- Fix ETC1 compression in pict by inverting modifier table and fixing complement calculation in differential mode.
+	- Implement RGB ETC2 compression (RGB8 only) in pict.
+
+23Feb13 - Added fast_mutation_probability to FgenPopulation structure to streamline calculating of the probability table
+          used by fgen_mutation_per_bit_fast.
+	- Move the creation of the probability table to the point when mutation probability is set instead of the beginning
+          of fgen_run and variants. Move the deallocation of the probability table from the end of fgen_run and variants to
+	  fgen_destroy. This increases efficiency and means that the mutation rate may now be changed during a run when
+	  fgen_mutation_per_bit_fast is used.
+	- Population size for texture compression in pict application was accidently set to 4096, changed to 128 for much
+	  better performance.
+	- Fix bug in pict application where the original image wasn't displayed properly with magnfication enabled.
+	- Use mean square error instead of simple difference for image difference fitness calculation in pict.
+	- Migration interval is allowed to be 0 meaning no migration.
+	- Added archipelago option to pict example application.
+	- Added option to pict to compare preexisting compressed texture files to an image file and report the
+	  root-mean-square error.
+
+Version 0.1.9
+
+22Feb13 - Added ETC1 and DXT1 texture compression methods to pict program.
+
+21Feb13 - Remove superfluous use of const in some function prototypes.
+	- Change sample_ffit_rastrigin to use uniform_per_element crossover instead of uniform_per_bit.
+	- Signficantly optimized bitstring mutation in fgen_mutation_per_bit_fast and
+	  fgen_mutation_per_bit_plus_macro_mutation_fast. It uses a precalculated probability table for every number of
+	  possible bit mutations in an individual. ffit now uses this version as default. Two fields were added at the
+	  end of the FgenPopulation structure. This should be compatible with older applications using the library, but
+	  theoretically badly written code compiled with an earlier version could break (any code that does not use
+	  fgen_create to allocate the FgenPopulation structure).
+	- Optimized per element crossover operations for common data element sizes (32, 64-bit).
+	- Fix possible unaligned memory access when creating random bitstrings.
+	- Clean up elitism code in selection and optimize it by reducing the frequency of new individual allocations.
+	- Fix memory leak occurring when running fgen_run and variants multiple times on the same population (without
+          calling fgen_destroy in between). It is allowed to continue evolution in this way, although the initial
+	  seeding may replace the whole population. Use the new fgen_set_initialization_type function to allow
+	  continued evolution with an existing population.
+	- Added fgen_get_generation.
+	- Greatly speed-up Gray-code decoding, which was a huge bottleneck when used (such as in ffit).
+	- Clean up sample_ffit_rastrigin so that no memory is leaked when running ffit several times on the same
+	  data structure.
+	- Adjust the shared library options in the Makefile so that it works with gcc 4.7.2.
+
+Version 0.1.8
+
+20Feb13 - Implement steady-state evolution in fgen_run_steady_state and fgen_run_steady_state_archipelago.
+	- When the max_generation argument to fgen_run and its variations is equal to - 1, run indefinitely instead of
+	  stopping at max_generation. This setting is now used in ffit.
+	- Also allow the max_generation argument to be - 1 in fgen_run_pso.
+	- Some documentation updates.
+	- In ffit_run_pso, respect the generation callback interval (previously it was forced to 1 irrespective of the value
+	  set in ffit).
+	- In ffit_run_pso, initialize the random number generator with the timer, analogous with the behaviour of
+	  ffit_run_fgen. Previously, every run of ffit_run_pso with the same parameters would result in exactly the
+	  same behaviour.
+	- In fgen_run_archipelago and its threaded version, do not reseed the random number generator of island 0.
+	- Implement fgen_run_steady_state_archipelago_threaded. Due to the nature of the steady-state algorithm there
+	  is no fgen_run_steady_state_threaded.
+	- Add the -s option to the example program sample_tsp_archipelago for steady-state evolution.
+	- Also add the steady state functionality to the C++ wrapper and sample_tsp_archipelago_cpp.
+
+Version 0.1.7
+
+19Feb13 - Add elitism to little used simple roulette wheel stochastic selection.
+	- When there is a fitness equal to negative infinity or NaN, exit with an error. Previously in version 0.1.6
+	  when this happened with SUS selection the last individual was copied to the whole population. Earlier versions
+          would exit with a rounding error.
+	- Linear genetic programming example program added in gp/ subdirectory.
+
+17Feb13 - Made mutation and crossover probability customizable in graphical TSP example.
+	- When the crossover probability is 0 or the crossover operator is fgen_crossover_noop, skip the crossover step
+	  entirely.
+	- In the real-valued chromosome example sample_rastrigin_double, use a combination of small and large mutations
+	  to improve performance.
+	- Implement ffit with real-valued chromosomes internally in ffit_run_fgen_real_valued and
+	  ffit_run_fgen_real_valued_archipelago. It uses two different kinds of mutation and intermediate recombination
+	  for crossover. Convergence performance seems to be better than the original functions that use a bitstring 		  representation internally and it is faster (the overhead of the genetic algorithm is significantly less). 
+
+16Feb13	- Insert mutation was executed with effective probability of 1, changed to use the actual mutation probability
+	  per individual.
+	- Added benchmark with varying mutation and crossover probabilities in graphical TSP example.
+	- Changed TSP example programs to use invert mutation with order-based crossover since that seems to be more
+          effective (much more so than the swap mutation and position-based crossover used previously).
+
+15Feb13 - Changed fgen_random_seed_with_timer to not only use seconds but also microsecond data to seed the timer.
+	- Invert mutation and order-based crossover for permutations added to library and used by graphical TSP
+	  example program.
+
+Version 0.1.6
+
+14Feb13 - Fixed memory leak in fgen_destroy which was not completely freeing all data structures associated with a
+	  population.
+	- Adjust uninstall procedure in Makefile to also remove symbolic links of the installed library.
+
+13Feb13 - Added fgen_mutation_permutation_insert, an efficient insert mutation for permutations, useful for the TSP.
+	- Fixed major bug in PSO implementation resulting in possible unpredictable behaviour when particle velocity is
+	  bounded.
+	- Fixed silent bug in fgen_crossover_permutation_position_based that could result in invalid memory access.
+
+12Feb13	- Fixed broken and little used FGEN_STOCHASTIC selection type.
+	- In fgen_run_threaded, calculate the fitness of generation 0 threaded instead of in a single thread.
+        - Do not return with an error in case of a rare rounding problem in SUS selection and rank-based selection.
+	- During selection, if the fitness of every individual is identical, copy the population unchanged
+	  (previously this scenario might have caused exit with an error message). 
+
+11Feb13 - When extinction is enabled, call the seeding function instead of just creating randomized bitstrings for
+          the new individuals. This bug was exposed when using extinction with populations with a custom seeding
+          function such as those consisting of permutations.
+	- Graphical TSP (Travelling Salesman Problem) example program added.
+
+Version 0.1.5
+
+16Aug12 - Updated sample_pi_pso.c.
+
+09Mar12	- Add fgen_invalidate_population_fitness and ffit_signal_model_change.
+
+08Mar12 - Optimized pict application.
+
+Version 0.1.4
+
+07Mar12 - Add graphical example "pict". Documentation updates.
+
+03Mar12	- Use alloca() instead of malloc in ffit, resulting in performance improvement.
+
+Version 0.1.3
+
+29Feb12	- Fix random number generator for 32-bit systems.
+
+28Feb12	- Documentation updated.
+
+Version 0.1.2
+
+27Feb12	- Optimized fgen_run_archipelago_threaded so that fitness calculations are always done in concurrent threads
+	  rather than in a single thread triggered by the generation callback function's use of a best_individual
+	  function.
+	- Provided example sample_rastrigin_double to illustrate the use of custom operators with real-valued
+	  chromosomes.
+	- Renamed references to remainder stochastic selection to stochastic universal sampling.
+	- Provided alpha C++ wrapper API for the fgen module in the libfgenpp sub-library and C++ example using this
+	  (sample_tsp_archipelago_cpp.cpp).
+	- Added fgen_initialize function as an alternative for fgen_create.
+
+Version 0.1.1
+
+26Feb12	- Made fgen_run_archipelago_threaded itself thread-safe (so that an application can run multiple instances
+	  of fgen_run_archipelago_threaded).
+	- Deleted unused functions associated with fgen_run_archipelago_threaded.
+	- Long lines in README reformatted.
+	- Warning in documentation about not using fitness cache with fgen_run_threaded.
+	- Made CalculatePopulationFitnessThreaded (used by fgen_run_threaded) flexible to be able to run with
+	  an arbitrary number of concurrent threads.
+	- fgen_run_threaded uses the Linux sysconf() system call to get the number of processor cores and uses
+	  that number as the maximum number of threads, which is stored in the FgenPopulation structure. This
+	  number of threads is used for the number of concurrent fitness calculations.
+	- fgen_run_archipelago_threaded changed to allow a limitation of the number of active threads (instead of
+	  letting each island thread run concurrently), but this limitation is not enforced because it doesn't
+	  help performance.
+	- Allow creation of the initial populations and calculating their fitness in fgen_run_archipelago_threaded
+	  to be done in concurrent threads.
+
+Version 0.1 (initial release).
+

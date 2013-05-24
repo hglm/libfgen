@@ -1,0 +1,49 @@
+
+This program is an example program for the fgen library that implements a
+simple linear genetic programming system. In genetic programming, computer
+programs are evolved to satisfy constraints defined by a training set of
+input and output parameters. For example, to evolve a program that takes
+the square of an input register, the training set may consist of eight
+training inputs and outputs where each input value is a random integer and
+each output value is the square of that integer. The genetic algorithm
+determines the fitness of an individual by, for example, counting the
+number of correct outputs (the program evaluated returns the squared value
+of the input), or in the case of floating point outputs by summing the
+difference between the model output and the produced one.
+
+The genetic programs consist of a set of 32-bit instructions in a simple
+imaginary assembly language. The encoding has been chosen such that every
+possible bitstring encodes for a valid instruction. This makes it possible
+to use regular GA mutation operators, in addition to specialized ones. The
+programs are evaluated by a simple interpreter. The instruction set chosen
+resembles a subset of a RISC architecture. The ALU instruction format
+includes three operands, two source registers and a destination register.
+The notation lists the source operands first and the destination last. For
+example, the instruction
+
+	add r0, r1, r2
+
+adds integer registers r0 and r1 together and stores the result in register
+r2. In addition to integer instructions and registers, there are also
+floating point registers and instructions. Most of the generatable example
+programs chose either integer or floating point arithmetic instructions to
+be generated, depending on the nature of the program, to speed up
+convergence. Note that all non-input registers are initialized to zero at
+the start of each program evaluation, and generated program often use these
+registers as a source of zero in arithmetic. For example, the instruction
+
+	or r6, r0, r1
+
+at the start of a program would be equivalent to:
+
+	mov r0, r1
+
+When the evaluated program succeeds in producing the correct output (in the
+case of floating point models to within a small fraction), the length of
+the program and the use of relatively expensive instructions (such as
+division) are also taken into account in the fitness function to further
+optimize the program.
+
+When running the program, it will display the fitness and program code of
+the best individual every 100th generation.
+

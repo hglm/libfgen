@@ -1,0 +1,88 @@
+
+libfgen -- Fast and efficient genetic algorithm library. Version 0.1.16.
+
+The libary now supports Windows as well as Linux.
+
+**** Linux installation ****
+
+In Linux, the code has been tested on x86-64 Linux where "long int" is 64-bit
+wide, and on a 32-bit ARM system. It should also work but has not been tested
+on 32-bit x86 systems. It is compiled with -std-gnu99.
+
+It is configured to be a shared library. The default installation directory for
+the library and header files are /usr/lib and /usr/include, respectively. Edit
+the file Makefile to change this.
+
+To compile the library, run:
+
+	make
+
+To install the library, run:
+
+	sudo make install
+
+To make the example programs, run make in the examples/ subdirectory.
+
+To make the graphical example program "pict", which uses GTK+ 3, run:
+
+	make
+
+in the examples/pict/ directory with the gtk-3.0 library development package
+installed.
+
+Likewise, to make the graphical TSP example program tsp_gtk, run make in the
+examples/tsp_gtk/ directory.
+
+Run make in the examples/gp/ directory to compile the linear genetic programming
+example.
+
+To make the documentation with doxygen installed, run:
+
+	doxygen fgen.doxygen
+
+The html documentation is installed in doc/html/.
+Online documentation can be found at http://libfgen.sourceforge.net.
+
+To use the library in your program, include fgen.h and link with -lfgen. Or
+when using the C++ wrapper API (which is not really recommended), include
+fgenpp.h and link with -lfgen -lfgenpp.
+
+**** Windows installation ****
+
+A Visual C++ 2010 project solution file for the 32-bit version is included.
+This should enable building of a static library and the example programs
+(except the gtk examples tsp_gtk and pict). Use the Release configuration.
+After building the static libary will be found as libfgen/Release/libfgen.lib.
+The header file is libfgen/fgen.h. The examples will be created as command-line
+executables in libfgen/examples and libfgen/examples/gp. A precompiled version
+of libfgen.lib is provided as libfgen/Release/libfgen.lib.
+
+Libfgen for Windows requires the pthread_win32 library, the 32-bit version of
+which is included in the pthread32_win32/ directory. When running programs
+compiled with libfgen, the pthreadVC2.dll file should be installed in the PATH
+(in a location like \windows\system32). When compiling programs,
+link with libfgen.lib and pthreadVC2.lib.
+
+The full source code and 64-bit libraries of pthread_win32 can be found at the
+site http://sourceware.org/pthreads-win32/.
+
+Note that libfgen and the example files are build in C++ mode in Visual C++
+despite the source filenames ending in .c. This is because the source code
+uses extensions of C defined by the C99 standard which are not supported by
+Visual C++, but are supported in C++ mode. The relevant option is project
+properties -> C/C++ -> Advanced -> Compile As = Compile as C++ Code.
+
+The building of the GTK example program tsp_gtk in Windows requires a GTK 3
+installation. All the include paths (the output of the GTK 3 package's
+`pkgconfig --cflags gtk+-3.0` command) must be set in the Additional Include
+Directories field of the source file gtk.c in the tsp_gtk project. Then,
+all the .lib files from the GTK distribution must be added as Resource Files
+for the project.
+
+It is also possible to use MinGW, the a GNU development environment for
+Windows. When using MinGW, run make -f Makefile.MinGW in the libfgen/
+directory to compile the libary. Provided GTK 3 is installed with a working
+pkg-config in the PATH, the graphical examples should also compile. 
+
+The author can be reached at fgenfb at yahoo.com.
+
