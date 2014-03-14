@@ -1,7 +1,5 @@
 
-libfgen -- Fast and efficient genetic algorithm library. Version 0.1.16.
-
-The libary now supports Windows as well as Linux.
+libfgen -- Fast and efficient genetic algorithm library. Version 0.2
 
 **** Linux installation ****
 

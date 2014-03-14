@@ -170,8 +170,12 @@ int data_element_size, FgenGenerationCallbackFunc fgen_generation_callback_func,
 fgen_calculate_fitness_func, FgenSeedFunc fgen_seed_func, FgenMutationFunc fgen_mutation_func, FgenCrossoverFunc
 fgen_crossover_func) {
 	pop->size = population_size;
+	pop->population_size_shift = fgen_calculate_shift(population_size);
 	pop->individual_size_in_bits = individual_size_in_bits;
+        pop->individual_size_shift = fgen_calculate_shift(individual_size_in_bits);
 	pop->data_element_size = data_element_size;
+	pop->data_element_size_shift = fgen_calculate_shift(data_element_size);
+        pop->nu_data_elements = pop->individual_size_in_bits / pop->data_element_size;
 	pop->fgen_generation_callback_func = fgen_generation_callback_func;
 	pop->fgen_calculate_fitness_func = fgen_calculate_fitness_func;
 	pop->fgen_seed_func = fgen_seed_func;

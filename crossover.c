@@ -90,9 +90,10 @@ void DoCrossover(FgenPopulation *pop) {
 void fgen_crossover_one_point_per_element(FgenPopulation *pop, const unsigned char *parent1,
 const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 	int bitnumber;
-	bitnumber = fgen_random_n(pop->rng, pop->individual_size_in_bits / pop->data_element_size) *
+	bitnumber = fgen_random_n(pop->rng, pop->nu_data_elements) *
 		pop->data_element_size;
-	if (pop->data_element_size == 32 || pop->data_element_size == 64) {
+	if (pop->data_element_size_shift >= 3) {
+                // data_element_size is power of two >= 8.
 		memcpy(child1, parent1, bitnumber / 8);
 		memcpy(child1 + bitnumber / 8, parent2 + bitnumber / 8, (pop->individual_size_in_bits - bitnumber) / 8);
 		memcpy(child2, parent2, bitnumber / 8);
@@ -133,9 +134,9 @@ void fgen_crossover_two_point_per_element(FgenPopulation *pop, const unsigned ch
 const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 	/* Exchange the segments that fall between two positions. */
 	int bitnumber1, bitnumber2;
-	bitnumber1 = fgen_random_n(pop->rng, pop->individual_size_in_bits / pop->data_element_size) *
+	bitnumber1 = fgen_random_n(pop->rng, pop->nu_data_elements) *
 		pop->data_element_size;
-	bitnumber2 = fgen_random_n(pop->rng, pop->individual_size_in_bits / pop->data_element_size) *
+	bitnumber2 = fgen_random_n(pop->rng, pop->nu_data_elements) *
 		pop->data_element_size;
 	if (bitnumber1 > bitnumber2) {
 		int temp;
@@ -143,7 +144,8 @@ const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 		bitnumber1 = bitnumber2;
 		bitnumber2 = temp;
 	}
-	if (pop->data_element_size == 32 || pop->data_element_size == 64) {
+	if (pop->data_element_size_shift >= 3) {
+                // data_element_size is power of two >= 8.
 		memcpy(child1, parent1, bitnumber1 / 8);
 		memcpy(child1 + bitnumber1 / 8, parent2 + bitnumber1 / 8, (bitnumber2 - bitnumber1) / 8);
 		memcpy(child1 + bitnumber2 / 8, parent1 + bitnumber2 / 8, (pop->individual_size_in_bits - bitnumber2) / 8);
@@ -190,6 +192,12 @@ const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
  * Bit-wise uniform crossover operator. Each bit is randomly selected from one of the two parents.
  */
 
+#define uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, mask, r) \
+	destword1 |= (srcword1 & mask) & (r & mask); \
+	destword2 |= (srcword2 & mask) & (r & mask); \
+	destword1 |= (srcword2 & mask) & ((r & mask) ^ mask); \
+	destword2 |= (srcword1 & mask) & ((r & mask) ^ mask);
+
 void fgen_crossover_uniform_per_bit(FgenPopulation *pop, const unsigned char *parent1,
 const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 	/* Randomly select the parent for each bit. */
@@ -201,6 +209,56 @@ const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 	srcstr2 = (unsigned char *)parent2;
 	deststr1 = child1;
 	deststr2 = child2;
+        int n = INDIVIDUAL_SIZE_IN_BYTES(pop);
+        if ((n & 3) != 0)
+		goto not_multiple_of_four_bytes;
+        /* Multiple of four bytes (32-bit words) allows further optimization. */
+        n >>= 2;
+	for (i = 0; i < n; i++) {
+		unsigned int srcword1, srcword2;
+		unsigned int destword1, destword2;
+		srcword1 = *((unsigned int *)srcstr1 + i);
+		srcword2 = *((unsigned int *)srcstr2 + i);
+		destword1 = 0x00;
+		destword2 = 0x00;
+		unsigned int r = fgen_random_32(pop->rng);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x1, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x2, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x4, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x8, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x10, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x20, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x40, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x80, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x100, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x200, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x400, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x800, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x1000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x2000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x4000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x8000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x10000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x20000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x40000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x80000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x100000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x200000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x400000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x800000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x1000000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x2000000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x4000000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x8000000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x10000000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x20000000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x40000000, r);
+		uniform_crossover_merge_bit(srcword1, srcword2, destword1, destword2, 0x80000000, r);
+		*((unsigned int *)deststr1 + i) = destword1;
+		*((unsigned int *)deststr2 + i) = destword2;
+	}
+	return;
+not_multiple_of_four_bytes :
 	for (i = 0; i < INDIVIDUAL_SIZE_IN_BYTES(pop); i++) {
 		unsigned int srcbyte1, srcbyte2;
 		unsigned int destbyte1, destbyte2;
@@ -208,29 +266,15 @@ const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 		srcbyte2 = srcstr2[i];
 		destbyte1 = 0x00;
 		destbyte2 = 0x00;
-#if 0
-                int mask = 1;
-		for (j = 0; j < 8; j++) {
-			if (Random2()) {
-				destbyte1 |= srcbyte1 & mask;
-				destbyte2 |= srcbyte2 & mask;
-			}
-			else {
-				destbyte1 |= srcbyte2 & mask;
-				destbyte2 |= srcbyte1 & mask;
-			}
-			mask <<= 1;
-		}
-#else
 		int r = fgen_random_8(pop->rng);
-		int mask;
-		for (mask = 1; mask <= 0x80; mask <<= 1) {
-			destbyte1 |= (srcbyte1 & mask) & (r & mask);
-			destbyte2 |= (srcbyte2 & mask) & (r & mask);
-			destbyte1 |= (srcbyte2 & mask) & ((r & mask) ^ mask);
-			destbyte2 |= (srcbyte1 & mask) & ((r & mask) ^ mask);
-		}
-#endif
+		uniform_crossover_merge_bit(srcbyte1, srcbyte2, destbyte1, destbyte2, 0x1, r);
+		uniform_crossover_merge_bit(srcbyte1, srcbyte2, destbyte1, destbyte2, 0x2, r);
+		uniform_crossover_merge_bit(srcbyte1, srcbyte2, destbyte1, destbyte2, 0x4, r);
+		uniform_crossover_merge_bit(srcbyte1, srcbyte2, destbyte1, destbyte2, 0x8, r);
+		uniform_crossover_merge_bit(srcbyte1, srcbyte2, destbyte1, destbyte2, 0x10, r);
+		uniform_crossover_merge_bit(srcbyte1, srcbyte2, destbyte1, destbyte2, 0x20, r);
+		uniform_crossover_merge_bit(srcbyte1, srcbyte2, destbyte1, destbyte2, 0x40, r);
+		uniform_crossover_merge_bit(srcbyte1, srcbyte2, destbyte1, destbyte2, 0x80, r);
 		deststr1[i] = destbyte1;
 		deststr2[i] = destbyte2;
 	}

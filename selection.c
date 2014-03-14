@@ -211,12 +211,34 @@ static void TournamentSelection(FgenPopulation *pop, FgenIndividual **ind1, Fgen
 	/* to be selected extra times based on fitness. */
 	int nu_elites = DoElitism(pop, random_order, ind1, ind2);
 
+        if (pop->population_size_shift < 0)
+		goto not_power_of_two_population_size;
+        fgen_random_n_prepare_for_power_of_two(pop->rng, pop->size);
 	for (i = nu_elites; i < pop->size; i++) {
 		FgenIndividual *winner;
 		int j;
 		double best_fitness = NEGATIVE_INFINITY_DOUBLE;
 		for (j = 0; j < pop->tournament_size; j++) {
-			int k = fgen_random_n(pop->rng, pop->size);
+			int k = fgen_random_n_power_of_two_repeat(pop->rng);
+			if (ind1[k]->fitness > best_fitness) {
+				winner = ind1[k];
+				best_fitness = ind1[k]->fitness;
+			}
+		}
+		ind2[random_order[i]] = winner;
+		winner->refcount++;
+	}
+	free(random_order);
+	return;
+
+not_power_of_two_population_size :
+        fgen_random_n_general_prepare_for_repeat(pop->rng, pop->size);
+	for (i = nu_elites; i < pop->size; i++) {
+		FgenIndividual *winner;
+		int j;
+		double best_fitness = NEGATIVE_INFINITY_DOUBLE;
+		for (j = 0; j < pop->tournament_size; j++) {
+			int k = fgen_random_n_general_repeat(pop->rng);
 			if (ind1[k]->fitness > best_fitness) {
 				winner = ind1[k];
 				best_fitness = ind1[k]->fitness;

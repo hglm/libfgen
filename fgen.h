@@ -41,18 +41,18 @@
 
 // Generic helper definitions for shared library support
 #if defined _WIN32 || defined __CYGWIN__
-  #define FGEN_HELPER_DLL_IMPORT __declspec(dllimport)
-  #define FGEN_HELPER_DLL_EXPORT __declspec(dllexport)
-  #define FGEN_HELPER_DLL_LOCAL
+  #define FGEN_HELPER_SHARED_IMPORT __declspec(dllimport)
+  #define FGEN_HELPER_SHARED_EXPORT __declspec(dllexport)
+  #define FGEN_HELPER_SHARED_LOCAL
 #else
   #if __GNUC__ >= 4
-    #define FGEN_HELPER_DLL_IMPORT __attribute__ ((visibility ("default")))
-    #define FGEN_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
-    #define FGEN_HELPER_DLL_LOCAL  __attribute__ ((visibility ("hidden")))
+    #define FGEN_HELPER_SHARED_IMPORT __attribute__ ((visibility ("default")))
+    #define FGEN_HELPER_SHARED_EXPORT __attribute__ ((visibility ("default")))
+    #define FGEN_HELPER_SHARED_LOCAL  __attribute__ ((visibility ("hidden")))
   #else
-    #define FGEN_HELPER_DLL_IMPORT
-    #define FGEN_HELPER_DLL_EXPORT
-    #define FGEN_HELPER_DLL_LOCAL
+    #define FGEN_HELPER_SHARED_IMPORT
+    #define FGEN_HELPER_SHARED_EXPORT
+    #define FGEN_HELPER_SHARED_LOCAL
   #endif
 #endif
 
@@ -60,17 +60,22 @@
 // FGEN_API is used for the public API symbols. It either DLL imports or DLL exports (or does nothing
 // for static build). FGEN_LOCAL is used for non-api symbols.
 
-#ifdef FGEN_DLL // defined if FGEN is compiled as a DLL
-  #ifdef FGEN_DLL_EXPORTS // defined if we are building the GA DLL (instead of using it)
-    #define FGEN_API FGEN_HELPER_DLL_EXPORT
+#ifdef FGEN_SHARED
+  // Defined if FGEN is compiled as a shared library.
+  #ifdef FGEN_SHARED_EXPORTS
+    // Defined if we are building the libfgen shared library (instead of using it).
+    #define FGEN_API FGEN_HELPER_SHARED_EXPORT
   #else
-    #define FGEN_API FGEN_HELPER_DLL_IMPORT
-  #endif // FGEN_DLL_EXPORTS
-  #define FGEN_LOCAL FGEN_HELPER_DLL_LOCAL
-#else // FGEN_DLL is not defined: this means FGEN is a static lib.
+    #define FGEN_API FGEN_HELPER_SHARED_IMPORT
+  #endif // FGEN_SHARED_EXPORTS
+  #define FGEN_LOCAL FGEN_HELPER_SHARED_LOCAL
+#else
+  // FGEN_SHARED is not defined: this means libfgen is a static lib.
   #define FGEN_API
   #define FGEN_LOCAL
-#endif // FGEN_DLL
+#endif // FGEN_SHARED
+
+#include <stdint.h>  // uint64_t is used.
 
 __BEGIN_DECLS
 
@@ -110,16 +115,25 @@ typedef struct FGEN_API {
 	int refcount;
 } FgenCache;
 
-#define FGEN_RNG_STATE_SIZE 4096
+#define FGEN_RNG_STATE_SIZE 8
+#define FGEN_RNG_STORAGE_SIZE 64
 
 typedef struct FGEN_API {
 	unsigned int Q[FGEN_RNG_STATE_SIZE];
 	unsigned int c;
 	int index;
+#if FGEN_RNG_STORAGE_SIZE == 64
+	// 64 bits of storage.
+	uint64_t storage;
+#else
 	unsigned int storage;
+#endif
 	int storage_size;
-	int last_random_n_power_of_2;
-	int last_random_n_power_of_2_bit_count;
+	unsigned int last_power_of_two;
+        unsigned int last_general_range;
+	// The bit shift corresponding to the last power of two (log2(n)).
+	unsigned char last_power_of_two_shift;
+        unsigned char last_general_range_shift;
 } FgenRNG;
 
 /** The generation callback function. The current population and the current generation are passed as arguments. */
@@ -179,6 +193,10 @@ struct FgenPopulation_t {
 	int fast_mutation_nu_bits_to_mutate;	/**< Used internally. */
 	int initialization_type;		/**< Flag that can be used to continue with an existing population. */
 	float fast_mutation_probability;	/**< Used internally. */
+        int nu_data_elements;			/**< Used internally (number of data elements in an individual). */
+        int population_size_shift;		/**< Used internally (>= 0 if population size is power of two). */
+        int individual_size_shift;		/**< Used internally (>= 0 if individual size is power of two). */
+        int data_element_size_shift;		/**< Used internally (>= 0 if data element size is power of two). */
 };
 
 /* Fitness selection types. */
@@ -204,9 +222,12 @@ struct FgenPopulation_t {
 #define FGEN_KILL_TOURNAMENT			(FGEN_TOURNAMENT | FGEN_KILL_TOURNAMENT_ELEMENT)
 
 /* Initialization types. */
-
 #define FGEN_INITIALIZATION_SEED	0
 #define FGEN_INITIALIZATION_CONTINUE	1
+
+/* Flags (used internally). */
+#define FGEN_FLAG_POPULATION_SIZE_POWER_OF_TWO	1
+#define FGEN_FLAG_INDIVIDUAL_SIZE_POWER_OF_TWO	2
 
 /* Main interface. */
 
@@ -348,9 +369,30 @@ FGEN_API int fgen_random_8(FgenRNG *rng);
 FGEN_API int fgen_random_16(FgenRNG *rng);
 FGEN_API unsigned int fgen_random_32(FgenRNG *rng);
 FGEN_API int fgen_random_n(FgenRNG *rng, int n);
+// Integer extensions provided with libfgen v0.2.
+FGEN_API unsigned int fgen_random_n_max_65536(FgenRNG *rng, unsigned int n);
+FGEN_API unsigned int fgen_random_n_max_256(FgenRNG *rng, unsigned int n);
+FGEN_API unsigned int fgen_random_n_power_of_two(FgenRNG *rng, unsigned int n);
+FGEN_API unsigned int fgen_random_n_power_of_two_max_65536(FgenRNG *rng, unsigned int n);
+FGEN_API unsigned int fgen_random_n_power_of_two_max_256(FgenRNG *rng, unsigned int n);
+FGEN_API unsigned int fgen_random_n_power_of_two_with_shift(FgenRNG *rng, unsigned int shift);
+FGEN_API unsigned int fgen_random_n_power_of_two_repeat(FgenRNG *rng);
+FGEN_API unsigned int fgen_random_n_general_repeat(FgenRNG *rng);
+FGEN_API void fgen_random_n_power_of_two_prepare_for_repeat(FgenRNG *rng, unsigned int n);
+// Prepare for random range that is not necessarily a power two (but allowed to be),
+// to be followed by calls to fgen_random_n_non_power_of_two_repeat().
+FGEN_API void fgen_random_n_general_prepare_for_repeat(FgenRNG *rng, unsigned int n);
+// Efficiently calculate log2(n), returns - 1 if n is not a power of two.
+FGEN_API int fgen_calculate_shift(unsigned int n);
+// Note: libfgen v0.2 provides significantly higher precision floats and doubles using the
+// following standard functions.
 FGEN_API float fgen_random_f(FgenRNG *rng, float range);
 FGEN_API double fgen_random_d(FgenRNG *rng, double range);
 FGEN_API double fgen_random_from_range_d(FgenRNG *rng, double min_bound, double max_bound);
+// Floating point extensions provided with libfgen v0.2.
+FGEN_API float fgen_random_f_low_precision(FgenRNG *rng, float range);
+FGEN_API float fgen_random_d_low_precision(FgenRNG *rng, float range);
+FGEN_API float fgen_random_d_high_precision(FgenRNG *rng, float range);
 
 /** @} */
 

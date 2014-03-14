@@ -328,13 +328,27 @@ void fgen_mutation_per_bit(FgenPopulation *pop, const unsigned char *parent, uns
 /**
  * Fast bit-wise mutation operator. A predefined random number of bits is mutated. There is a chance that the same bit
  * is toggled more than once, but because the mutation rate per bit is low it is not that important.
+ * pop->fast_mutation_nu_bits_to_mutate is guaranteed to be >= 1.
  */
 
 void fgen_mutation_per_bit_fast(FgenPopulation *pop, const unsigned char *parent, unsigned char *child) {
-	int i;
-	for (i = 0; i < pop->fast_mutation_nu_bits_to_mutate; i++) {
-		int r = fgen_random_n(pop->rng, pop->individual_size_in_bits);
-		mutate_bit(child, r);		
+	int n = pop->fast_mutation_nu_bits_to_mutate;
+	if (pop->individual_size_shift >= 0) {
+		// Optimize for individual size in bits that is a power of two.
+		// Individual size in bits is (1 << pop->individual_size_shift).
+		unsigned int r = fgen_random_n_power_of_two_with_shift(pop->rng,
+			pop->individual_size_shift);
+		mutate_bit(child, r);
+                for (int i = 1; i < n; i++) {
+			r = fgen_random_n_power_of_two_repeat(pop->rng);
+			mutate_bit(child, r);
+		}
+		return;
+        }
+        fgen_random_n_general_prepare_for_repeat(pop->rng, pop->individual_size_in_bits);
+	for (int i = 0; i < n; i++) {
+		int r = fgen_random_n_general_repeat(pop->rng);
+		mutate_bit(child, r);
 	}
 }
 
@@ -411,9 +425,10 @@ void fgen_mutation_permutation_swap(FgenPopulation *pop, const unsigned char *pa
 	int r = fgen_random_16(pop->rng);
 	if (r >= pop->mutation_probability)
 		return;
+        fgen_random_n_general_prepare_for_repeat(pop->rng, pop->permutation_size);
 	do {
-		index1 = fgen_random_n(pop->rng, pop->permutation_size);
-		index2 = fgen_random_n(pop->rng, pop->permutation_size);
+		index1 = fgen_random_n_general_repeat(pop->rng);
+		index2 = fgen_random_n_general_repeat(pop->rng);
 	} while (index1 == index2);
 	*(int *)&child[index1 * 4] = *(int *)&parent[index2 * 4];
 	*(int *)&child[index2 * 4] = *(int *)&parent[index1 * 4];
@@ -428,8 +443,9 @@ void fgen_mutation_permutation_insert(FgenPopulation *pop, const unsigned char *
 	int r = fgen_random_16(pop->rng);
 	if (r >= pop->mutation_probability)
 		return;
-	int index = fgen_random_n(pop->rng, pop->permutation_size);
-	int index_dest = fgen_random_n(pop->rng, pop->permutation_size);
+        fgen_random_n_general_prepare_for_repeat(pop->rng, pop->permutation_size);
+	int index = fgen_random_n_general_repeat(pop->rng);
+	int index_dest = fgen_random_n_general_repeat(pop->rng);
 	if (index_dest < index) {
 		/* The destination of the element is to the left of its previous position. */
 		/* The first, unaltered part of the permutation was already copied into the child. */
