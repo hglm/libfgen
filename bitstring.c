@@ -36,7 +36,7 @@
 
 void CreateRandomBitstring(FgenRNG *rng, unsigned char *bitstring, int size_in_bytes) {
 	while (size_in_bytes >= 1 && (POINTER_TO_UINT(bitstring) & 3) != 0) {
-		*bitstring = fgen_random_8(rng);
+		*bitstring = RandomBits(rng, 8);
 		size_in_bytes--;
 		bitstring++;
 	}
@@ -46,7 +46,7 @@ void CreateRandomBitstring(FgenRNG *rng, unsigned char *bitstring, int size_in_b
 		bitstring += 4;
 	}
 	while (size_in_bytes >= 1) {
-		*bitstring = fgen_random_8(rng);
+		*bitstring = RandomBits(rng, 8);
 		size_in_bytes--;
 		bitstring++;
 	}

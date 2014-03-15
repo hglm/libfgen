@@ -27,6 +27,7 @@
 #include <limits.h>
 #include <float.h>
 #include "fgen.h"
+#include "random.h"
 #include "parameters.h"
 #include "error.h"
 #include "population.h"
@@ -70,7 +71,7 @@ void DoMigration(int nu_pops, FgenPopulation **pops) {
 		if (previous_i < 0)
 			previous_i = nu_pops - 1;
 		for (j = 0; j < pops[i]->size; j++)  {
-			int r = fgen_random_16(pops[i]->rng);
+			int r = RandomBits(pops[i]->rng, 16);
 			if (r < pops[i]->migration_probability)
 				Migrate(pops[i]->ind[j], pops[previous_i]);
 		}

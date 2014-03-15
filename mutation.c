@@ -317,7 +317,7 @@ void DoMutation(FgenPopulation *pop) {
 void fgen_mutation_per_bit(FgenPopulation *pop, const unsigned char *parent, unsigned char *child) {
 	int i;
 	for (i = 0; i < pop->individual_size_in_bits; i++) {
-		int r = fgen_random_16(pop->rng);
+		int r = RandomBits(pop->rng, 16);
 		if (r < pop->mutation_probability) {
 			/* Mutate the bit. */
 			mutate_bit(child, i);
@@ -336,18 +336,18 @@ void fgen_mutation_per_bit_fast(FgenPopulation *pop, const unsigned char *parent
 	if (pop->individual_size_shift >= 0) {
 		// Optimize for individual size in bits that is a power of two.
 		// Individual size in bits is (1 << pop->individual_size_shift).
-		unsigned int r = fgen_random_n_power_of_two_with_shift(pop->rng,
+		unsigned int r = RandomIntPowerOfTwoWithShift(pop->rng,
 			pop->individual_size_shift);
 		mutate_bit(child, r);
                 for (int i = 1; i < n; i++) {
-			r = fgen_random_n_power_of_two_repeat(pop->rng);
+			r = RandomIntPowerOfTwoRepeat(pop->rng);
 			mutate_bit(child, r);
 		}
 		return;
         }
-        fgen_random_n_general_prepare_for_repeat(pop->rng, pop->individual_size_in_bits);
+        RandomIntGeneralPrepareForRepeat(pop->rng, pop->individual_size_in_bits);
 	for (int i = 0; i < n; i++) {
-		int r = fgen_random_n_general_repeat(pop->rng);
+		int r = RandomIntGeneralRepeat(pop->rng);
 		mutate_bit(child, r);
 	}
 }
@@ -365,7 +365,7 @@ unsigned char *child) {
 		/* For each data element. */
 		int n = pop->individual_size_in_bits / pop->data_element_size;
 		for (i = 0; i < n; i++) {
-			int r = fgen_random_16(pop->rng);
+			int r = RandomBits(pop->rng, 16);
 			if (r < pop->macro_mutation_probability)
 				/* Mutate the entire data element with a random value */
 				CreateRandomBitstring(pop->rng, child + i * pop->data_element_size / 8,
@@ -387,7 +387,7 @@ unsigned char *child) {
 		if (pop->data_element_size == 32) {
 			int n = pop->individual_size_in_bits / 32;
 			for (int i = 0; i < n; i++) {
-				int r = fgen_random_16(pop->rng);
+				int r = RandomBits(pop->rng, 16);
 				if (r < pop->macro_mutation_probability)
 					*(unsigned int *)&child[i * 4] = fgen_random_32(pop->rng);
 			}
@@ -396,7 +396,7 @@ unsigned char *child) {
 		if (pop->data_element_size == 64) {
 			int n = pop->individual_size_in_bits / 32;
 			for (int i = 0; i < n; i += 2) {
-				int r = fgen_random_16(pop->rng);
+				int r = RandomBits(pop->rng, 16);
 				if (r < pop->macro_mutation_probability) {
 					*(unsigned int *)&child[i * 4] = fgen_random_32(pop->rng);
 					*(unsigned int *)&child[i * 4 + 4] = fgen_random_32(pop->rng);
@@ -407,7 +407,7 @@ unsigned char *child) {
 		/* For each data element. */
 		int n = pop->individual_size_in_bits / pop->data_element_size;
 		for (int i = 0; i < n; i++) {
-			int r = fgen_random_16(pop->rng);
+			int r = RandomBits(pop->rng, 16);
 			if (r < pop->macro_mutation_probability)
 				/* Mutate the entire data element with a random value */
 				CreateRandomBitstring(pop->rng, child + i * pop->data_element_size / 8,
@@ -422,13 +422,13 @@ unsigned char *child) {
 
 void fgen_mutation_permutation_swap(FgenPopulation *pop, const unsigned char *parent, unsigned char *child) {
 	int index1, index2;
-	int r = fgen_random_16(pop->rng);
+	int r = RandomBits(pop->rng, 16);
 	if (r >= pop->mutation_probability)
 		return;
-        fgen_random_n_general_prepare_for_repeat(pop->rng, pop->permutation_size);
+        RandomIntGeneralPrepareForRepeat(pop->rng, pop->permutation_size);
 	do {
-		index1 = fgen_random_n_general_repeat(pop->rng);
-		index2 = fgen_random_n_general_repeat(pop->rng);
+		index1 = RandomIntGeneralRepeat(pop->rng);
+		index2 = RandomIntGeneralRepeat(pop->rng);
 	} while (index1 == index2);
 	*(int *)&child[index1 * 4] = *(int *)&parent[index2 * 4];
 	*(int *)&child[index2 * 4] = *(int *)&parent[index1 * 4];
@@ -440,12 +440,12 @@ void fgen_mutation_permutation_swap(FgenPopulation *pop, const unsigned char *pa
  */
 
 void fgen_mutation_permutation_insert(FgenPopulation *pop, const unsigned char *parent, unsigned char *child) {
-	int r = fgen_random_16(pop->rng);
+	int r = RandomBits(pop->rng, 16);
 	if (r >= pop->mutation_probability)
 		return;
-        fgen_random_n_general_prepare_for_repeat(pop->rng, pop->permutation_size);
-	int index = fgen_random_n_general_repeat(pop->rng);
-	int index_dest = fgen_random_n_general_repeat(pop->rng);
+        RandomIntGeneralPrepareForRepeat(pop->rng, pop->permutation_size);
+	int index = RandomIntGeneralRepeat(pop->rng);
+	int index_dest = RandomIntGeneralRepeat(pop->rng);
 	if (index_dest < index) {
 		/* The destination of the element is to the left of its previous position. */
 		/* The first, unaltered part of the permutation was already copied into the child. */
@@ -472,16 +472,16 @@ void fgen_mutation_permutation_insert(FgenPopulation *pop, const unsigned char *
  */
 
 void fgen_mutation_permutation_invert(FgenPopulation *pop, const unsigned char *parent, unsigned char *child) {
-	int r = fgen_random_16(pop->rng);
+	int r = RandomBits(pop->rng, 16);
 	if (r >= pop->mutation_probability)
 		return;
 	const int *p = (int *)parent;
 	int *c = (int *)child;
-	int index = fgen_random_n(pop->rng, pop->permutation_size);
+	int index = RandomInt(pop->rng, pop->permutation_size);
 	int max_size = pop->permutation_size - index;
 	int size;
 	if (max_size > 1)
-		size = fgen_random_n(pop->rng, max_size) + 1;
+		size = RandomInt(pop->rng, max_size) + 1;
 	else
 		size = 1;
 	/* Invert the subroute. */

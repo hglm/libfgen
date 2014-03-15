@@ -11,7 +11,7 @@ PROFILING_CFLAGS = -std=gnu99 -Wall -ggdb -p -I.
 PROFILING_CPLUSPLUSFLAGS = -Wall -ggdb -p -I.
 SHARED_LIB_DIR = /usr/lib
 INCLUDE_DIR = /usr/include
-VERSION = 0.2
+VERSION = 0.2.1
 VERSION_MAJOR = 0
 
 MODULES = bitstring.o parameters.o population.o \

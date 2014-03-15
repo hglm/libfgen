@@ -3,8 +3,8 @@ CC = gcc
 CCPLUSPLUS = g++
 
 # Uncomment the following 5 lines for normal compilation.
-CFLAGS = -std=gnu99 -Wall -O2
-CPPFLAGS = -Wall -O2
+CFLAGS = -std=gnu99 -Wall -Ofast
+CPPFLAGS = -Wall -Ofast
 LIBFGEN = -lfgen
 LIBFGENPP = -lfgenpp
 LIBS = -lm

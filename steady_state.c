@@ -79,7 +79,7 @@ static void DoCrossoverSteadyState(FgenPopulation *pop, int i, int j, int k, int
 		return;
 	int r;
 	FgenIndividual **ind = pop->ind;
-	r = fgen_random_8(pop->rng);
+	r = RandomBits(pop->rng, 8);
 	if (r < pop->crossover_probability) {
 		/* Perform crossover operation. */
 		FgenIndividual *new_ind1 = NewIndividual(pop);

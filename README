@@ -1,11 +1,11 @@
 
-libfgen -- Fast and efficient genetic algorithm library. Version 0.2
+libfgen -- Fast and efficient genetic algorithm library. Version 0.2.1
 
 **** Linux installation ****
 
-In Linux, the code has been tested on x86-64 Linux where "long int" is 64-bit
-wide, and on a 32-bit ARM system. It should also work but has not been tested
-on 32-bit x86 systems. It is compiled with -std-gnu99.
+In Linux, the code has been tested on x86-64 Linux, and on 32-bit ARM-based
+systems. It should also work but has not been tested on 32-bit x86 systems. It is
+compiled with -std-gnu99.
 
 It is configured to be a shared library. The default installation directory for
 the library and header files are /usr/lib and /usr/include, respectively. Edit

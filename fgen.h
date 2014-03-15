@@ -368,6 +368,7 @@ FGEN_API int fgen_random_2(FgenRNG *rng);
 FGEN_API int fgen_random_8(FgenRNG *rng);
 FGEN_API int fgen_random_16(FgenRNG *rng);
 FGEN_API unsigned int fgen_random_32(FgenRNG *rng);
+FGEN_API unsigned int fgen_random_bits(FgenRNG *rng, int n_bits);
 FGEN_API int fgen_random_n(FgenRNG *rng, int n);
 // Integer extensions provided with libfgen v0.2.
 FGEN_API unsigned int fgen_random_n_max_65536(FgenRNG *rng, unsigned int n);
@@ -380,7 +381,7 @@ FGEN_API unsigned int fgen_random_n_power_of_two_repeat(FgenRNG *rng);
 FGEN_API unsigned int fgen_random_n_general_repeat(FgenRNG *rng);
 FGEN_API void fgen_random_n_power_of_two_prepare_for_repeat(FgenRNG *rng, unsigned int n);
 // Prepare for random range that is not necessarily a power two (but allowed to be),
-// to be followed by calls to fgen_random_n_non_power_of_two_repeat().
+// to be followed by calls to fgen_random_n_general_repeat().
 FGEN_API void fgen_random_n_general_prepare_for_repeat(FgenRNG *rng, unsigned int n);
 // Efficiently calculate log2(n), returns - 1 if n is not a power of two.
 FGEN_API int fgen_calculate_shift(unsigned int n);

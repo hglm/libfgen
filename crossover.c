@@ -57,7 +57,7 @@ void DoCrossover(FgenPopulation *pop) {
 			continue;
 		}
 		int r;
-		r = fgen_random_8(pop->rng);
+		r = RandomBits(pop->rng, 8);
 		if (r < pop->crossover_probability) {
 			/* Perform crossover operation. */
 			ind2[i] = NewIndividual(pop);
@@ -90,7 +90,7 @@ void DoCrossover(FgenPopulation *pop) {
 void fgen_crossover_one_point_per_element(FgenPopulation *pop, const unsigned char *parent1,
 const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 	int bitnumber;
-	bitnumber = fgen_random_n(pop->rng, pop->nu_data_elements) *
+	bitnumber = RandomInt(pop->rng, pop->nu_data_elements) *
 		pop->data_element_size;
 	if (pop->data_element_size_shift >= 3) {
                 // data_element_size is power of two >= 8.
@@ -116,7 +116,7 @@ const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 void fgen_crossover_one_point_per_bit(FgenPopulation *pop, const unsigned char *parent1,
 const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 	int bitnumber;
-	bitnumber = fgen_random_n(pop->rng, pop->individual_size_in_bits);
+	bitnumber = RandomInt(pop->rng, pop->individual_size_in_bits);
 	/* It is quickest to copy the whole string first. */
 	memcpy(child1, parent1, INDIVIDUAL_SIZE_IN_BYTES(pop));
 	memcpy(child2, parent2, INDIVIDUAL_SIZE_IN_BYTES(pop));
@@ -134,10 +134,9 @@ void fgen_crossover_two_point_per_element(FgenPopulation *pop, const unsigned ch
 const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 	/* Exchange the segments that fall between two positions. */
 	int bitnumber1, bitnumber2;
-	bitnumber1 = fgen_random_n(pop->rng, pop->nu_data_elements) *
-		pop->data_element_size;
-	bitnumber2 = fgen_random_n(pop->rng, pop->nu_data_elements) *
-		pop->data_element_size;
+        RandomIntGeneralPrepareForRepeat(pop->rng, pop->nu_data_elements);
+	bitnumber1 = RandomIntGeneralRepeat(pop->rng) * pop->data_element_size;
+	bitnumber2 = RandomIntGeneralRepeat(pop->rng) * pop->data_element_size;
 	if (bitnumber1 > bitnumber2) {
 		int temp;
 		temp = bitnumber1;
@@ -171,8 +170,9 @@ void fgen_crossover_two_point_per_bit(FgenPopulation *pop, const unsigned char *
 const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 	/* Exchange the segments that fall between two positions. */
 	int bitnumber1, bitnumber2;
-	bitnumber1 = fgen_random_n(pop->rng, pop->individual_size_in_bits);
-	bitnumber2 = fgen_random_n(pop->rng, pop->individual_size_in_bits);
+	RandomIntGeneralPrepareForRepeat(pop->rng, pop->individual_size_in_bits);
+	bitnumber1 = RandomIntGeneralRepeat(pop->rng);
+	bitnumber2 = RandomIntGeneralRepeat(pop->rng);
 	if (bitnumber1 > bitnumber2) {
 		int temp;
 		temp = bitnumber1;
@@ -266,7 +266,7 @@ not_multiple_of_four_bytes :
 		srcbyte2 = srcstr2[i];
 		destbyte1 = 0x00;
 		destbyte2 = 0x00;
-		int r = fgen_random_8(pop->rng);
+		int r = RandomBits(pop->rng, 8);
 		uniform_crossover_merge_bit(srcbyte1, srcbyte2, destbyte1, destbyte2, 0x1, r);
 		uniform_crossover_merge_bit(srcbyte1, srcbyte2, destbyte1, destbyte2, 0x2, r);
 		uniform_crossover_merge_bit(srcbyte1, srcbyte2, destbyte1, destbyte2, 0x4, r);
@@ -295,7 +295,7 @@ const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 		unsigned int *c1 = (unsigned int *)child1;
 		unsigned int *c2 = (unsigned int *)child2;
 		for (int i = 0; i < pop->individual_size_in_bits / 32; i++) {
-			int r = fgen_random_2(pop->rng);
+			int r = RandomBits(pop->rng, 1);
 			if (r == 0) {
 				/* Swap. */
 				c1[i] = p2[i];
@@ -314,7 +314,7 @@ const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 		unsigned int *c1 = (unsigned int *)child1;
 		unsigned int *c2 = (unsigned int *)child2;
 		for (int i = 0; i < pop->individual_size_in_bits / 32; i += 2) {
-			int r = fgen_random_2(pop->rng);
+			int r = RandomBits(pop->rng, 1);
 			if (r == 0) {
 				/* Swap. */
 				c1[i] = p2[i];
@@ -332,7 +332,7 @@ const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 		return;
 	}
 	for (int i = 0; i < pop->individual_size_in_bits; i += pop->data_element_size) {
-		int r = fgen_random_2(pop->rng);
+		int r = RandomBits(pop->rng, 1);
 		if (r == 0) {
 			/* Swap this element. */
 			fgen_copy_partial_bitstring(parent2, child1, i, pop->data_element_size);
@@ -357,14 +357,14 @@ const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 	int *c1 = (int *)child1;
 	int *c2 = (int *)child2;
 	// Pick a random subroute of random size.
-	int index = fgen_random_n(pop->rng, pop->permutation_size);
+	int index = RandomInt(pop->rng, pop->permutation_size);
 	int max_size = pop->permutation_size - index;
         int size;
 	if (max_size == pop->permutation_size)
-		size = fgen_random_n(pop->rng, pop->permutation_size - 1) + 1;
+		size = RandomInt(pop->rng, pop->permutation_size - 1) + 1;
 	else
         if (max_size > 1)
-		size = fgen_random_n(pop->rng, max_size) + 1;
+		size = RandomInt(pop->rng, max_size) + 1;
 	else
 		size = 1;
 	// Copy the subroute from parent 1 to the same location in child 1.
@@ -451,12 +451,12 @@ const unsigned char *parent2, unsigned char *child1, unsigned char *child2) {
 		c2[i] = - 1;
 	}
 	/* Pick a set of random cities. */
-	int pos = fgen_random_n(pop->rng, size - 2);
+	int pos = RandomInt(pop->rng, size - 2);
 	/* Keep adding random cities until we can add no more. Copy the selected cities into the offspring. */
 	while (pos < size) {
 		c1[pos] = p1[pos];
 		c2[pos] = p2[pos];
-		pos += fgen_random_n(pop->rng, size - pos) + 1;
+		pos += RandomInt(pop->rng, size - pos) + 1;
 	}
 	/* Fill in the blanks. First create two position markers so that we know where we are in */
 	/* c1 and c2. */

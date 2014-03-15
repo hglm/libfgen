@@ -747,7 +747,7 @@ static double ffit_hill_climb_calculate_error(Ffit *fit, double *normalized_para
 
 /* Do a hill-climb with given normalized parameters. */
 
-static void ffit_do_hill_climb(Ffit *fit, double *normalized_param) {
+static void ffit_do_hill_climb(Ffit *fit, FgenPopulation *pop, double *normalized_param) {
 	int i;
 	double max_step_size;
 	double error;
@@ -763,7 +763,7 @@ static void ffit_do_hill_climb(Ffit *fit, double *normalized_param) {
 		/* Make a working copy of the old parameters. */
 		memcpy(param, normalized_param, sizeof(double) * fit->nu_params);
 		/* Choose a random parameter. */
-		param_index = fgen_random_n(fit->nu_params);
+		param_index = RandomInt(pop, fit->nu_params);
 		/* Choose a random small step, positive or negative. */
 		step = fgen_random_d(max_step_size * 2) - max_step_size;
 		param[param_index] += step;
@@ -798,7 +798,7 @@ static void ffit_fgen_hill_climb(Ffit *fit, FgenPopulation *pop) {
 		ffit_fgen_extract_normalized_parameters(fit, pop, pop->ind[i]->bitstring, normalized_param);
 // printf("Before hill-climb: ");
 // print_params(fit, normalized_param);
-		ffit_do_hill_climb(fit, normalized_param);
+		ffit_do_hill_climb(fit, pop, normalized_param);
 // printf("After hill-climb: ");
 // print_params(fit, normalized_param);
 		ffit_fgen_encode_normalized_parameters(fit, pop, normalized_param, pop->ind[i]->bitstring);
