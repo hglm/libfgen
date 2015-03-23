@@ -634,7 +634,7 @@ void fgen_run_archipelago_threaded(int nu_pops, FgenPopulation **pops, int max_g
 		pthread_cond_broadcast(condition_continue);
 		pthread_mutex_unlock(mutex_continue);
 
-		if (pops[0]->migration_interval != 0)
+		if (pops[0]->migration_interval != 0 && pops[0]->generation != 0)
 			if (pops[0]->generation % pops[0]->migration_interval == 0)
 				DoMigration(nu_pops, pops);
 

@@ -284,6 +284,36 @@ FgenIndividual *fgen_best_individual_of_archipelago(int nu_pops, FgenPopulation 
 }
 
 /**
+ * Returns the best individual of an archipelago of populations and the island to which it
+ * belongs.
+ *
+ * @param nu_pops The number of islands in the archipelago.
+ * @param pops The archipelago (an array of populations).
+ * @param island A pointer to the integer where the island index will be stored.
+ * @return A pointer to the best individual.
+ */
+
+FgenIndividual *fgen_best_individual_and_island_of_archipelago(int nu_pops,
+FgenPopulation **pops, int *island) {
+	int i;
+	double best_fitness;
+	FgenIndividual *best_ind;
+	best_fitness = NEGATIVE_INFINITY_DOUBLE;
+	int best_island = 0;
+	for (i = 0; i < nu_pops; i++) {
+		FgenIndividual *ind;
+		ind = fgen_best_individual_of_population(pops[i]);
+		if (ind->fitness > best_fitness) {
+			best_fitness = ind->fitness;
+			best_ind = ind;
+			best_island = i;
+		}
+	}
+	*island = best_island;
+	return best_ind;
+}
+
+/**
  * Update the fitness of every individual in the population.
  */
 
