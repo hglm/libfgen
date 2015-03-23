@@ -329,6 +329,8 @@ const unsigned char *parent2, unsigned char *child1, unsigned char *child2);
 FGEN_API FgenIndividual *fgen_best_individual_of_population(FgenPopulation *pop);
 FGEN_API FgenIndividual *fgen_worst_individual_of_population(FgenPopulation *pop);
 FGEN_API FgenIndividual *fgen_best_individual_of_archipelago(int nu_pops, FgenPopulation **pops);
+FGEN_API FgenIndividual *fgen_best_individual_and_island_of_archipelago(int nu_pops, FgenPopulation **pops,
+int *island);
 FGEN_API void fgen_update_population_fitness(FgenPopulation *pop);
 FGEN_API void fgen_invalidate_population_fitness(FgenPopulation *pop);
 FGEN_API void fgen_signal_stop(FgenPopulation *pop);
